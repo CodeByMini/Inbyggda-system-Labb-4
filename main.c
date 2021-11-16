@@ -14,8 +14,8 @@ int main (void) {
 	i2c_init();
 	uart_init();
 	
-	char * text = "hej alla banditer som sitter har och skiter";
-	//char * text = "har du traffat jaques brels mindre kanda bror kjell brell gbg";
+	//char * text = "hej alla banditer som sitter har och skiter";
+	char * text = "har du traffat jaques brels mindre kanda bror kjell brell gbg";
 	//char * text = "hejpadigdingamlagalosch";
 	//char * text = "hejja";
 

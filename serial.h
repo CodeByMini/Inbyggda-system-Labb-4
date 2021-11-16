@@ -11,7 +11,5 @@ void uart_putchars(char chr);
 
 char uart_getchar(void);
 
-void uart_print_hex(uint8_t *buffer, uint8_t length);
-
 #endif
 
