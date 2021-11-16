@@ -129,8 +129,9 @@ inline void i2c_xmit_byte(uint8_t data) {
 	while (!(TWCR & (1 << TWINT)));
 }
 
+/* reading byte with ack enabled tells eeprom to send ack and that i2c wants to continue reading*/
 inline uint8_t i2c_read_ACK() {
-	/*  Waits for ACKKNOWLEDGE by enabling TWEA (enable ACK)*/
+	/*  enable ACK bit in TWCR */
 	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
 	/* Wait until TWINT flag is set and operation is completed */
 	while (!(TWCR & (1 << TWINT)));
@@ -138,6 +139,7 @@ inline uint8_t i2c_read_ACK() {
 	return TWDR;
 }
 
+/* reading byte without ack tells eeprom that this is the last byte to be read*/
 inline uint8_t i2c_read_NAK() {
 	TWCR = (1 << TWINT) | (1 << TWEN);
 
@@ -155,8 +157,7 @@ inline void eeprom_wait_until_write_complete() {
 	}
 }
 
-/* read one byte from i2c */
-/* 
+/* read one byte from i2c 
 * Send start command to start communication with i2c
 * tell i2c which device adress to communicate with 
 	(using write bit to write adress)
@@ -164,6 +165,7 @@ inline void eeprom_wait_until_write_complete() {
 * send a new start command and the device adress with READ bit
 * read one byte with NAK 
 * send stop command to i2c
+* return the recieved byte 
 */
 uint8_t eeprom_read_byte(uint8_t addr) {
 	uint8_t readByte;
@@ -181,6 +183,12 @@ uint8_t eeprom_read_byte(uint8_t addr) {
 	return readByte;
 }
 
+/* Send one byte to i2c
+* run start sequence and then tell i2c which i2c-adress to use
+* transmit the adress in the eeprom to be written
+* transmit the byte to be written
+* stop transmittion and the check status for success
+*/
 void eeprom_write_byte(uint8_t addr, uint8_t data) {
 	i2c_start();
 	i2c_xmit_addr(EEPROM_ADDR, WRITE);
