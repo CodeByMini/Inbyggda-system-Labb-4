@@ -147,3 +147,55 @@ inline uint8_t i2c_read_NAK() {
 
 	return TWDR;
 }
+
+inline void eeprom_wait_until_write_complete() {
+	/* run start sequence, set start adress */
+	/* while SLA+W transmitted, ACK received is not true*/
+	while (i2c_get_status() != 0x18) {
+		i2c_start();
+		i2c_xmit_addr(EEPROM_ADDR, WRITE);
+	}
+}
+
+/* read one byte from i2c 
+* Send start command to start communication with i2c
+* tell i2c which device adress to communicate with 
+	(using write bit to write adress)
+* tell which adress on device to read from
+* send a new start command and the device adress with READ bit
+* read one byte with NAK 
+* send stop command to i2c
+* return the recieved byte 
+*/
+uint8_t eeprom_read_byte(uint8_t addr) {
+	uint8_t readByte;
+
+	i2c_start();
+	i2c_xmit_addr(EEPROM_ADDR, WRITE);
+	i2c_xmit_byte(addr);
+
+	i2c_start();
+	i2c_xmit_addr(EEPROM_ADDR, READ);
+	readByte = i2c_read_NAK();
+
+	i2c_stop();
+
+	return readByte;
+}
+
+/* Send one byte to i2c
+* run start sequence and then tell i2c which i2c-adress to use
+* transmit the adress in the eeprom to be written
+* transmit the byte to be written
+* stop transmittion and the check status for success
+*/
+void eeprom_write_byte(uint8_t addr, uint8_t data) {
+	i2c_start();
+	i2c_xmit_addr(EEPROM_ADDR, WRITE);
+
+	i2c_xmit_byte(addr);
+	i2c_xmit_byte(data);
+
+	i2c_stop();
+	eeprom_wait_until_write_complete();
+}
