@@ -199,3 +199,74 @@ void eeprom_write_byte(uint8_t addr, uint8_t data) {
 	i2c_stop();
 	eeprom_wait_until_write_complete();
 }
+
+/* Page writing to eeprom allows for 8 bytes to be written in the same transmission
+	eeprom internal buffer can store 8 bytes therefor writing past 8 bytes 
+	will wrap around and start at the beginning of the page
+	therefor the FOR loop will only handle the 8 first bits in data
+	other functions need to handle that write page only receives 8 bytes
+	*/
+void eeprom_write_page(uint8_t addr, char data[8]) {
+	i2c_start();
+	i2c_xmit_addr(EEPROM_ADDR, WRITE);
+	i2c_xmit_byte(addr);
+	for(int i = 0; i <8; i++){
+		i2c_xmit_byte(data[i]);
+	}
+	i2c_stop();
+	eeprom_wait_until_write_complete();
+}
+
+/*
+This function handles a string to be written to eeprom by dividing the string
+into even portions of 8 and using write page to send to eeprom.
+Bytes that are not evenly divedable with 8 are written using eeprom_write_byte
+*/
+void eeprom_sequential_write(uint8_t addr, char *data, size_t length){
+	uint8_t singleBytes = length % 8; 				  //number for bytes in the string not evenly divadable with 8
+	uint8_t numberOfPages = ((length-singleBytes)/8); //how many pages should be written
+	uint8_t pageNumber = 0; 						  //start number for pages		
+	char word[8];									  //buffer for page to be written
+
+	if(numberOfPages > 0){							  //check if there is any pages
+		int j = 0;		
+		for(int i = 0; i <= length; i++){			  //iterate over data with the size given in function call
+			word[j]=data[i];						  //set the buffer(word) to the next letter in data
+			if(j == 7 ){							  //every 8 bytes a new page should be written to eeprom
+				/* adress is calculated from the number of pages and 8 bytes forward*/
+				eeprom_write_page(addr+(pageNumber*8), word); 
+				pageNumber++;						  // increment the pagenumber for the next time a page should be written
+				j = 0;								  // reset j to start at the beginning of the buffer(word)
+			}else {
+				j++;								  //if its not a page write, increment j to write to next position in the buffer(data)
+			}
+		}
+	}
+	
+	if(singleBytes > 0){							  //check if there are any singleBytes to be written
+		for(int s = 0; s <= singleBytes; s++){		  //iterate over the number of bytes
+			int index = s+(length-singleBytes);		  //calculate what part of data should be written to eeprom
+			eeprom_write_byte(addr+(pageNumber*8)+s, data[index]);
+		}
+	}
+}
+
+/* 
+   read a given size of eeprom in one go.
+   reading bytes with i2c_read_ACK allows for multiple bytes to be received
+   without the need to stop and start over for each byte
+   last byte is read with i2c_read_NAK and the a stop condition is sent.
+*/
+void eeprom_sequential_read(char *buf, uint8_t start_addr, uint8_t len) {
+	i2c_start();
+	i2c_xmit_addr(EEPROM_ADDR, 0);
+	i2c_xmit_byte(start_addr);
+	i2c_start();
+	i2c_xmit_addr(EEPROM_ADDR, 1);
+
+	for(int i = 0; i < len; i++){
+		buf[i] = i2c_read_ACK();
+	}
+	buf[len] = i2c_read_NAK();
+	i2c_stop();
+}

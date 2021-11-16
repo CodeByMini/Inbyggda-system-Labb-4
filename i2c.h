@@ -21,4 +21,8 @@ void eeprom_wait_until_write_complete(void);
 uint8_t eeprom_read_byte(uint8_t addr);
 void eeprom_write_byte(uint8_t addr, uint8_t data);
 
+void eeprom_write_page(uint8_t addr, char data[]);
+void eeprom_sequential_write(uint8_t addr, char *datat, size_t length);
+void eeprom_sequential_read(char *buf, uint8_t start_addr, uint8_t len);
+
 #endif // _I2C_H_
