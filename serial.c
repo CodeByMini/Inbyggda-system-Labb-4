@@ -40,3 +40,11 @@ char uart_getchar(void) {
 	return UDR0;
 }
 
+void uart_print_hex(uint8_t *buffer, uint8_t length){
+	printf("%s ", "Hex");
+	for(int i = 0; i < length-1; i++){
+		printf("%X",buffer[i]);
+	}
+	printf("%c", '\n');
+}
+
